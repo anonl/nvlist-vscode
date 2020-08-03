@@ -1,0 +1,74 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "NVList",
+    "scopeName": "source.nvlist",
+    "patterns": [
+        {
+            "include": "#code"
+        },
+        {
+            "include": "#comments"
+        }
+    ],
+    "repository": {
+        "code": {
+            "patterns": [{
+                "begin": "^\\s*@@\\s*\\n",
+                "end": "^\\s*@@\\s*\\n",
+                "name": "keyword.color",
+                "contentName": "meta.embedded.block.lua",
+                "patterns": [{
+                    "include": "source.lua"
+                }]
+            }, {
+                "begin": "^\\s*@",
+                "end": "\n",
+                "name": "keyword.color",
+                "contentName": "meta.embedded.block.lua",
+                "patterns": [{
+                    "include": "source.lua"
+                }]
+            }, {
+                "begin": "\\[",
+                "end": "\\]",
+                "name": "keyword.color",
+                "patterns": [{
+                    "match": "\\\\."
+                }]
+            }, {
+                "begin": "\\${",
+                "end": "}",
+                "name": "string",
+                "patterns": [{
+                    "match": "\\\\."
+                }]
+            },
+            {
+                "begin": "\\$",
+                "end": "\\s",
+                "name": "string",
+                "patterns": [{
+                    "match": "\\\\."
+                }]
+            }, {
+                "begin": "{",
+                "end": "}",
+                "name": "entity.name.tag",
+                "patterns": [{
+                    "match": "\\\\."
+                }]
+            }]
+        },
+        "comments": {
+            "patterns": [{
+                "begin": "^\\s*##\\s*\\n",
+                "end": "^\\s*##\\s*\\n",
+                "name": "comment.block.nvlist"
+            }, {
+                "begin": "^\\s*#",
+                "end": "\n",
+                "name": "comment.line.nvlist"
+            }]
+        }
+    }
+}

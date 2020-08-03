@@ -1,0 +1,28 @@
+{
+    "name": "nvlist",
+    "displayName": "NVList",
+    "description": "NVList scripting support",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.47.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "nvlist",
+            "aliases": ["NVList", "nvlist"],
+            "extensions": [".lvn"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "nvlist",
+            "scopeName": "source.nvlist",
+            "path": "./syntaxes/nvlist.tmLanguage.json",
+            "embeddedLanguages": {
+                "meta.embedded.block.lua": "lua"
+            }
+        }]
+    }
+}
