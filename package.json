@@ -1,6 +1,7 @@
 {
     "name": "nvlist",
     "displayName": "NVList",
+    "publisher": "anonl",
     "description": "NVList scripting support",
     "version": "0.0.1",
     "engines": {
@@ -24,5 +25,6 @@
                 "meta.embedded.block.lua": "lua"
             }
         }]
+        
     }
 }
