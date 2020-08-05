@@ -10,21 +10,65 @@
     "categories": [
         "Programming Languages"
     ],
+    "main": "./out/extension.js",
+    "activationEvents": [
+        "workspaceContains:**/*.lvn",
+        "onCommand:workbench.action.tasks.runTask"
+	],
     "contributes": {
-        "languages": [{
-            "id": "nvlist",
-            "aliases": ["NVList", "nvlist"],
-            "extensions": [".lvn"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "nvlist",
-            "scopeName": "source.nvlist",
-            "path": "./syntaxes/nvlist.tmLanguage.json",
-            "embeddedLanguages": {
-                "meta.embedded.block.lua": "lua"
+        "languages": [
+            {
+                "id": "nvlist",
+                "aliases": [
+                    "NVList",
+                    "nvlist"
+                ],
+                "extensions": [
+                    ".lvn"
+                ],
+                "configuration": "./language-configuration.json"
             }
-        }]
-        
+        ],
+        "grammars": [
+            {
+                "language": "nvlist",
+                "scopeName": "source.nvlist",
+                "path": "./syntaxes/nvlist.tmLanguage.json",
+                "embeddedLanguages": {
+                    "meta.embedded.block.lua": "lua"
+                }
+            }
+        ],
+        "taskDefinitions": [
+            {
+                "type": "nvlist",
+                "required": [
+                    "gradleTask"
+                ],
+                "properties": {
+                    "gradleTask": {
+                        "type": "string",
+                        "description": "The Gradle task to execute"
+                    },
+                    "buildToolsFolder": {
+                        "type": "string",
+                        "description": "Path to the build-tools folder in your NVList installation."
+                    }
+                }
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -b",
+        "watch": "tsc -b -w"
+    },
+    "devDependencies": {
+        "@types/node": "^12.12.0",
+        "@typescript-eslint/eslint-plugin": "^3.0.2",
+        "@typescript-eslint/parser": "^3.0.2",
+        "eslint": "^7.1.0",
+        "typescript": "^3.9.4",
+        "@types/vscode": "^1.47.0"
     }
 }

@@ -5,8 +5,7 @@
 
 - Syntax highlighting for .lvn files
 
+## Implementation details
 
-## Release Notes
-
-### v0.0.1
-- Initial release
+- [Changelog](CHANGELOG.md)
+- [Release procedure](RELEASE.md)
