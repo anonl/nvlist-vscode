@@ -12,10 +12,11 @@
     ],
     "main": "./out/extension.js",
     "activationEvents": [
+        "onDebug",
         "workspaceContains:**/*.lvn",
         "onLanguage:nvlist",
         "onCommand:workbench.action.tasks.runTask"
-	],
+    ],
     "contributes": {
         "languages": [
             {
@@ -57,12 +58,29 @@
                     }
                 }
             }
+        ],
+        "debuggers": [
+            {
+                "type": "nvlist",
+                "label": "NVList",
+                "initialConfigurations": [
+                    {
+                        "type": "nvlist",
+                        "request": "launch",
+                        "program": "${workspaceFolder}",
+                        "stopOnEntry": true
+                    }
+                ]
+            }
         ]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -b",
         "watch": "tsc -b -w"
+    },
+    "dependencies": {
+        "vscode-debugadapter": "^1.41.1"
     },
     "devDependencies": {
         "@types/node": "^12.12.0",

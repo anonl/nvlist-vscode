@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 
 import { GradleTaskProvider } from './gradleTaskProvider';
-
-let taskProvider: vscode.Disposable | undefined;
+import { DebugConfigProvider, DebugAdapterFactory } from './debugProvider';
 
 export function activate(context: vscode.ExtensionContext): void {  
 	const workspaceRoot = vscode.workspace.rootPath;
@@ -11,10 +10,14 @@ export function activate(context: vscode.ExtensionContext): void {
 	}    
 
     console.log("NVList extension activated");
-    taskProvider = vscode.tasks.registerTaskProvider(GradleTaskProvider.NVLIST_TASK_TYPE,
-            new GradleTaskProvider(workspaceRoot));
+    context.subscriptions.push(vscode.tasks.registerTaskProvider(GradleTaskProvider.NVLIST_TASK_TYPE,
+            new GradleTaskProvider(workspaceRoot)));
+
+    context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('nvlist',
+        new DebugConfigProvider()));
+    context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('nvlist',
+        new DebugAdapterFactory()));
 }
 
-export function deactivate(): void {
-    taskProvider?.dispose();
+export function deactivate() {
 }
