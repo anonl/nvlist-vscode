@@ -13,6 +13,7 @@
     "main": "./out/extension.js",
     "activationEvents": [
         "workspaceContains:**/*.lvn",
+        "onLanguage:nvlist",
         "onCommand:workbench.action.tasks.runTask"
 	],
     "contributes": {
