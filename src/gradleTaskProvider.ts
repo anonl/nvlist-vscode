@@ -40,7 +40,7 @@ export class GradleTaskProvider implements vscode.TaskProvider {
 
         console.log("getTasks");
 
-        return this.tasks = [this.getTask('run')];
+        return this.tasks = [this.getTask('runDesktop')];
     }
 
     private getTask(gradleTask: string, def?: NVListGradleTaskDefinition): vscode.Task {
