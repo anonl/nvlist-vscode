@@ -67,10 +67,33 @@
                     {
                         "type": "nvlist",
                         "request": "launch",
-                        "program": "${workspaceFolder}",
-                        "stopOnEntry": true
+                        "name": "NVList (main)",
+                        "program": "${workspaceFolder}/res/script/main.lvn",
+                        "projectFolder": "${workspaceFolder}",
+                        "buildToolsFolder": "${workspaceFolder}/build-tools"
                     }
-                ]
+                ],
+                "configurationAttributes": {
+                    "launch": {
+						"properties": {
+							"program": {
+								"type": "string",
+								"description": "NVList script (.lvn) file to run",
+								"default": "${workspaceFolder}/res/script/main.lvn"
+							},
+							"projectFolder": {
+								"type": "string",
+								"description": "NVList project root folder (contains the 'res' folder)",
+								"default": "${workspaceFolder}"
+							},
+							"buildToolsFolder": {
+								"type": "string",
+								"description": "NVList build-tools folder",
+								"default": "${workspaceFolder}/build-tools"
+							}
+						}
+					}
+                }
             }
         ]
     },

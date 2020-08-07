@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import * as path from 'path';
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 
-import { LoggingDebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent } from 'vscode-debugadapter';
+import { LoggingDebugSession, InitializedEvent, TerminatedEvent, OutputEvent, DebugSession } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 
 export class DebugConfigProvider implements vscode.DebugConfigurationProvider {
@@ -37,14 +37,29 @@ interface LaunchRequest extends DebugProtocol.LaunchRequestArguments {
 
 class NvlistDebugSession extends LoggingDebugSession {
 
+    private delegate?: DebugSession;
+    private process?: ChildProcess;
+
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
         console.log("Initialize request");
 
 		response.body = {};
 		this.sendResponse(response);
 
+        // TODO: Open socket to remote, pass in/out streams to delegate
+        // const delegate = new DebugSession();
+        // delegate.start(input, output)
+        // this.delegate = delegate;
+
 		this.sendEvent(new InitializedEvent());
 	}
+
+    public shutdown() {
+        super.shutdown();
+
+        this.process?.kill(0);
+        this.delegate?.dispose();
+    }
 
     private sendOutput(category: string, text: string) {
         const event = new OutputEvent(text);
@@ -58,6 +73,9 @@ class NvlistDebugSession extends LoggingDebugSession {
         const process = spawn(`gradlew.bat`, ['-PvnRoot=' + args.projectFolder, 'run'], {
             cwd: args.buildToolsFolder
         })
+        this.process = process;
+
+        // Forward output
         process.stdout.on('data', data => this.sendOutput('stdout', data.toString()));
         process.stderr.on('data', data => this.sendOutput('stderr', data.toString()));
 
@@ -66,5 +84,20 @@ class NvlistDebugSession extends LoggingDebugSession {
 
 		this.sendResponse(response);
 	}
+
+    protected threadsRequest(response: DebugProtocol.ThreadsResponse, request?: DebugProtocol.Request): void {
+        console.log(`Threads request: ${JSON.stringify(request)}`);
+
+        // TODO: Implement by forwarding to NVList process
+        
+        this.sendResponse(response);
+    }
+
+    protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments, request?: DebugProtocol.Request) {
+        console.log(`StackTrace request: ${JSON.stringify(args)}`);
+
+        // TODO: Implement by forwarding to NVList process
+        this.sendResponse(response);
+    }
 
 }
