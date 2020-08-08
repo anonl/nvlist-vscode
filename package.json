@@ -59,6 +59,11 @@
                 }
             }
         ],
+        "breakpoints": [
+            {
+                "language": "nvlist"
+            }
+        ],
         "debuggers": [
             {
                 "type": "nvlist",

@@ -39,6 +39,7 @@ interface LaunchRequest extends DebugProtocol.LaunchRequestArguments {
 }
 
 const defaultTimeout: number = 10_000;
+const retryTimeout: number = 5_000;
 
 class PipedDebugSession extends DebugSession {
 
@@ -48,6 +49,7 @@ class PipedDebugSession extends DebugSession {
 
     handleMessage(msg: DebugProtocol.ProtocolMessage): void {
         if (msg.type == 'event') {
+            console.log(`Received event from remote debug server: ${JSON.stringify(msg)}`);
             this.client.sendEvent(<DebugProtocol.Event>msg);
         }
         super.handleMessage(msg);
@@ -57,11 +59,12 @@ class PipedDebugSession extends DebugSession {
 
 class NvlistDebugSession extends LoggingDebugSession {
 
+    private stopping: boolean = false;
     private delegate?: DebugSession;
     private childProcess?: ChildProcess;
 
     private forwardRequest(request: DebugProtocol.Request) {
-        this.delegate?.sendRequest(request.command, request.arguments, defaultTimeout, response => {
+        this.delegate!.sendRequest(request.command, request.arguments, defaultTimeout, response => {
             response.seq = 0;
             response.request_seq = request.seq;
             this.sendResponse(response);
@@ -73,29 +76,17 @@ class NvlistDebugSession extends LoggingDebugSession {
 
         logger.setup(LogLevel.Verbose, true);
 
-        // TODO: Open socket to remote, pass in/out streams to delegate
-        const conn = net.connect({
-            port: 12345,
-            timeout: 30_000,
-        }, () => {
-            console.log("Connected to remote debug server");
-        });
-        
-        const delegate = new PipedDebugSession(this);
-        delegate.start(conn, conn);
-        this.delegate = delegate;
-
-        this.forwardRequest({command: 'initialize', type: 'request', seq: 1, arguments: args});
-
-		this.sendEvent(new InitializedEvent());
+        response.body = { };
+        this.sendResponse(response);
 	}
 
     public shutdown() {
         super.shutdown();
-
+        
         console.log('Shutdown request received');
+        this.stopping = true;
 
-        this.childProcess?.kill(0);
+        this.childProcess?.kill();
         this.delegate?.dispose();
     }
 
@@ -105,7 +96,7 @@ class NvlistDebugSession extends LoggingDebugSession {
         this.sendEvent(event);
     }
 
-	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequest) {
+	protected launchRequest(launchResponse: DebugProtocol.LaunchResponse, args: LaunchRequest): void {
         console.log(`Launch request: ${JSON.stringify(args)}`);
 
         const childProcess = spawn(`gradlew.bat`, ['-PvnRoot=' + args.projectFolder, 'runDesktop'], {
@@ -120,11 +111,37 @@ class NvlistDebugSession extends LoggingDebugSession {
         // Terminate when the launched process exits
         childProcess.on('exit', () => this.sendEvent(new TerminatedEvent()));
 
-		this.sendResponse(response);
+        // Connect to the debug adapter server in the child process
+        console.log('Connecting to remove debug server...')
+        const conn = new net.Socket();
+        conn.setTimeout(defaultTimeout);        
+        conn.on('connect', () => {
+            console.log("Connected to remote debug server");
+
+            const delegate = new PipedDebugSession(this);
+            delegate.start(conn, conn);
+            this.delegate = delegate;
+
+            // Initialize delegate
+            delegate.sendRequest('initialize', {seq: 0, arguments: {}}, defaultTimeout, initResponse => {
+                // Return response to launch request
+                console.log("Remote debug server initialized");
+
+                this.sendEvent(new InitializedEvent());
+                this.sendResponse(launchResponse);
+            });
+        });
+        conn.on('close', () => {
+            if (!this.stopping) {
+                // Keep reconnecting until stopped
+                setTimeout(() => conn.connect(4711), retryTimeout);
+            }
+        })
+        conn.connect(4711);
 	}
 
     protected threadsRequest(response: DebugProtocol.ThreadsResponse, request?: DebugProtocol.Request): void {
-        console.log(`Threads request: ${JSON.stringify(request)}`);
+        console.log(`Threads request`);
 
         this.forwardRequest(request!);
     }
@@ -143,6 +160,12 @@ class NvlistDebugSession extends LoggingDebugSession {
 
     protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments, request?: DebugProtocol.Request): void {
         console.log(`Continue request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+    }
+
+    protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments, request?: DebugProtocol.Request): void {
+        console.log(`SetBreakpoints request: ${JSON.stringify(args)}`);
 
         this.forwardRequest(request!);
     }
