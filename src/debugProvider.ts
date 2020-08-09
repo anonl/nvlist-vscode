@@ -1,13 +1,12 @@
 import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 
-import { LoggingDebugSession, InitializedEvent, TerminatedEvent, OutputEvent, DebugSession } from 'vscode-debugadapter';
+import { Logger, logger, LoggingDebugSession, InitializedEvent, TerminatedEvent, OutputEvent, DebugSession } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 
 import * as path from 'path';
 import * as net from 'net';
 import { spawn, ChildProcess } from 'child_process';
-import { logger, LogLevel } from 'vscode-debugadapter/lib/logger';
 
 export class DebugConfigProvider implements vscode.DebugConfigurationProvider {
 	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
@@ -63,22 +62,19 @@ class NvlistDebugSession extends LoggingDebugSession {
     private delegate?: DebugSession;
     private childProcess?: ChildProcess;
 
+    constructor() {
+        super(undefined, undefined, true);
+
+        logger.init(e => this.sendEvent(e), undefined, true);
+    }
+
     private forwardRequest(request: DebugProtocol.Request) {
-        this.delegate!.sendRequest(request.command, request.arguments, defaultTimeout, response => {
+        this.delegate?.sendRequest(request.command, request.arguments, defaultTimeout, response => {
             response.seq = 0;
             response.request_seq = request.seq;
             this.sendResponse(response);
         });
     }
-
-	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
-        console.log("Initialize request");
-
-        logger.setup(LogLevel.Verbose, true);
-
-        response.body = { };
-        this.sendResponse(response);
-	}
 
     public shutdown() {
         super.shutdown();
@@ -95,6 +91,17 @@ class NvlistDebugSession extends LoggingDebugSession {
         event.body.category = category;
         this.sendEvent(event);
     }
+
+	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
+        console.log("Initialize request");
+
+        // logger.setup(Logger.LogLevel.Verbose, false);
+
+        response.body = {
+            supportsEvaluateForHovers: true,
+        };
+        this.sendResponse(response);
+	}
 
 	protected launchRequest(launchResponse: DebugProtocol.LaunchResponse, args: LaunchRequest): void {
         console.log(`Launch request: ${JSON.stringify(args)}`);
@@ -119,6 +126,7 @@ class NvlistDebugSession extends LoggingDebugSession {
             console.log("Connected to remote debug server");
 
             const delegate = new PipedDebugSession(this);
+            delegate.setRunAsServer(true);
             delegate.start(conn, conn);
             this.delegate = delegate;
 
@@ -166,6 +174,18 @@ class NvlistDebugSession extends LoggingDebugSession {
 
     protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments, request?: DebugProtocol.Request): void {
         console.log(`SetBreakpoints request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+    }
+
+    protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments, request?: DebugProtocol.Request): void {
+        console.log(`Evaluate request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+    }
+
+    protected setExpressionRequest(response: DebugProtocol.SetExpressionResponse, args: DebugProtocol.SetExpressionArguments, request?: DebugProtocol.Request): void {
+        console.log(`SetExpression request: ${JSON.stringify(args)}`);
 
         this.forwardRequest(request!);
     }
