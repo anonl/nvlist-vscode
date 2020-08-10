@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 
-import { Logger, logger, LoggingDebugSession, InitializedEvent, TerminatedEvent, OutputEvent, DebugSession } from 'vscode-debugadapter';
+import { logger, LoggingDebugSession, InitializedEvent, TerminatedEvent, OutputEvent, DebugSession } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 
 import * as path from 'path';
@@ -119,7 +119,7 @@ class NvlistDebugSession extends LoggingDebugSession {
         childProcess.on('exit', () => this.sendEvent(new TerminatedEvent()));
 
         // Connect to the debug adapter server in the child process
-        console.log('Connecting to remove debug server...')
+        console.log('Connecting to remote debug server...')
         const conn = new net.Socket();
         conn.setTimeout(defaultTimeout);        
         conn.on('connect', () => {
@@ -148,6 +148,12 @@ class NvlistDebugSession extends LoggingDebugSession {
         conn.connect(4711);
 	}
 
+    protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
+        console.log(`Disconnect request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+    }
+
     protected threadsRequest(response: DebugProtocol.ThreadsResponse, request?: DebugProtocol.Request): void {
         console.log(`Threads request`);
 
@@ -168,6 +174,24 @@ class NvlistDebugSession extends LoggingDebugSession {
 
     protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments, request?: DebugProtocol.Request): void {
         console.log(`Continue request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+    }
+
+    protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments, request?: DebugProtocol.Request): void {
+        console.log(`Next request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+    }
+
+    protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments, request?: DebugProtocol.Request): void {
+        console.log(`Step-in request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+    }
+
+    protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments, request?: DebugProtocol.Request): void {
+        console.log(`Step-out request: ${JSON.stringify(args)}`);
 
         this.forwardRequest(request!);
     }
