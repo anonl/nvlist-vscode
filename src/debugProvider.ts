@@ -21,19 +21,17 @@ export class DebugConfigProvider implements vscode.DebugConfigurationProvider {
                 config.buildToolsFolder = path.join(config.projectFolder, 'build-tools');
 			}
 		}
-		return config;
+        return config;
 	}
 }
 
 export class DebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
 	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): ProviderResult<vscode.DebugAdapterDescriptor> {
-		return executable ?? new vscode.DebugAdapterInlineImplementation(new NvlistDebugSession());
+		return executable ?? new vscode.DebugAdapterInlineImplementation(new NvlistDebugSession(session.configuration));
 	}
 }
 
 interface LaunchRequest extends DebugProtocol.LaunchRequestArguments {
-    projectFolder: string;
-    buildToolsFolder: string;
 	program: string;
 }
 
@@ -58,17 +56,20 @@ class PipedDebugSession extends DebugSession {
 
 class NvlistDebugSession extends LoggingDebugSession {
 
-    private stopping: boolean = false;
     private delegate?: DebugSession;
     private childProcess?: ChildProcess;
 
-    constructor() {
+    constructor(private config: DebugConfiguration) {
         super(undefined, undefined, true);
 
         logger.init(e => this.sendEvent(e), undefined, true);
     }
 
     private forwardRequest(request: DebugProtocol.Request) {
+        if (!this.delegate) {
+            console.warn(`Delegate is unavailable for request: ${JSON.stringify(request)}`);
+        }
+
         this.delegate?.sendRequest(request.command, request.arguments, defaultTimeout, response => {
             response.seq = 0;
             response.request_seq = request.seq;
@@ -80,9 +81,8 @@ class NvlistDebugSession extends LoggingDebugSession {
         super.shutdown();
         
         console.log('Shutdown request received');
-        this.stopping = true;
-
         this.childProcess?.kill();
+        this.delegate?.stop();
         this.delegate?.dispose();
     }
 
@@ -92,22 +92,13 @@ class NvlistDebugSession extends LoggingDebugSession {
         this.sendEvent(event);
     }
 
-	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
+	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments, request?: DebugProtocol.Request): void {
         console.log("Initialize request");
 
         // logger.setup(Logger.LogLevel.Verbose, false);
 
-        response.body = {
-            supportsEvaluateForHovers: true,
-        };
-        this.sendResponse(response);
-	}
-
-	protected launchRequest(launchResponse: DebugProtocol.LaunchResponse, args: LaunchRequest): void {
-        console.log(`Launch request: ${JSON.stringify(args)}`);
-
-        const childProcess = spawn(`gradlew.bat`, ['-PvnRoot=' + args.projectFolder, 'runDesktop'], {
-            cwd: args.buildToolsFolder
+        const childProcess = spawn(`gradlew.bat`, ['-PvnRoot=' + this.config.projectFolder, 'runDesktop'], {
+            cwd: this.config.buildToolsFolder
         })
         this.childProcess = childProcess;
 
@@ -131,27 +122,38 @@ class NvlistDebugSession extends LoggingDebugSession {
             this.delegate = delegate;
 
             // Initialize delegate
-            delegate.sendRequest('initialize', {seq: 0, arguments: {}}, defaultTimeout, initResponse => {
+            delegate.sendRequest('initialize', request, defaultTimeout, initResponse => {
                 // Return response to launch request
-                console.log("Remote debug server initialized");
+                console.log(`Remote debug server initialized`);
 
+                initResponse.seq = response.seq;
+                this.sendResponse(initResponse);
                 this.sendEvent(new InitializedEvent());
-                this.sendResponse(launchResponse);
             });
         });
         conn.on('close', () => {
-            if (!this.stopping) {
-                // Keep reconnecting until stopped
+            if (childProcess.exitCode === null) {
+                // Retry connection attempt unless stopping/stopped
                 setTimeout(() => conn.connect(4711), retryTimeout);
             }
         })
         conn.connect(4711);
 	}
 
+	protected launchRequest(launchResponse: DebugProtocol.LaunchResponse, args: LaunchRequest, request?: DebugProtocol.Request): void {
+        console.log(`Launch request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+	}
+
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
         console.log(`Disconnect request: ${JSON.stringify(args)}`);
 
-        this.forwardRequest(request!);
+        // Send disconnect to delegate, but don't wait for its response
+        this.delegate?.sendRequest('disconnect', args, defaultTimeout, r => {});
+        this.sendResponse(response);
+
+        this.shutdown();
     }
 
     protected threadsRequest(response: DebugProtocol.ThreadsResponse, request?: DebugProtocol.Request): void {
