@@ -95,7 +95,12 @@
 								"type": "string",
 								"description": "NVList build-tools folder",
 								"default": "${workspaceFolder}/build-tools"
-							}
+                            },
+                            "javaHome": {
+                                "type": "string",
+                                "description": "Path to a Java runtime (used to build/run NVList). A platform-specific runtime is packaged with NVList.",
+                                "default": "${workspaceFolder}/jre"
+                            }
 						}
 					}
                 }

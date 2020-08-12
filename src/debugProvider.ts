@@ -97,7 +97,14 @@ class NvlistDebugSession extends LoggingDebugSession {
 
         // logger.setup(Logger.LogLevel.Verbose, false);
 
-        const childProcess = spawn(`gradlew.bat`, ['-PvnRoot=' + this.config.projectFolder, 'runDesktop'], {
+        const gradleArgs = [
+            '-PvnRoot=' + this.config.projectFolder,
+            'runDesktop',
+        ];
+        if (this.config.javaHome) {
+            gradleArgs.push('-Dorg.gradle.java.home=' + this.config.javaHome);
+        }
+        const childProcess = spawn(`gradlew.bat`, gradleArgs, {
             cwd: this.config.buildToolsFolder
         })
         this.childProcess = childProcess;
