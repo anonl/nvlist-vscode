@@ -4,6 +4,7 @@ import { GradleTaskProvider } from './gradleTaskProvider';
 import { DebugConfigProvider, DebugAdapterFactory } from './debugProvider';
 import { NvlistHoverProvider } from './hoverProvider';
 import { NvlistEvalExpressionProvider } from './evalExpressionProvider';
+import { NvlistStatusBarProvider } from './statusBarProvider';
 
 export function activate(context: vscode.ExtensionContext): void {  
 	const workspaceRoot = vscode.workspace.rootPath;
@@ -12,6 +13,8 @@ export function activate(context: vscode.ExtensionContext): void {
 	}    
 
     console.log("NVList extension activated");
+    context.subscriptions.push(new NvlistStatusBarProvider());
+
     context.subscriptions.push(vscode.tasks.registerTaskProvider(GradleTaskProvider.NVLIST_TASK_TYPE,
             new GradleTaskProvider(workspaceRoot)));
 
@@ -27,3 +30,4 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate() {
 }
+
