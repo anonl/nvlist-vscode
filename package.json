@@ -4,6 +4,7 @@
     "publisher": "anonl",
     "description": "NVList scripting support",
     "version": "0.0.2",
+    "repository": "https://github.com/anonl/nvlist-vscode",
     "engines": {
         "vscode": "^1.47.0"
     },
