@@ -6,6 +6,7 @@ import { DebugProtocol } from 'vscode-debugprotocol';
 
 import * as path from 'path';
 import * as net from 'net';
+import * as os from 'os';
 import { spawn, ChildProcess } from 'child_process';
 
 export class DebugConfigProvider implements vscode.DebugConfigurationProvider {
@@ -104,7 +105,8 @@ class NvlistDebugSession extends LoggingDebugSession {
         if (this.config.javaHome) {
             gradleArgs.push('-Dorg.gradle.java.home=' + this.config.javaHome);
         }
-        const childProcess = spawn(`gradlew`, gradleArgs, {
+        const gradleWrapper = (os.platform() == 'win32' ? 'gradlew.bat' : 'gradlew');
+        const childProcess = spawn(gradleWrapper, gradleArgs, {
             cwd: this.config.buildToolsFolder
         })
         this.childProcess = childProcess;
@@ -219,6 +221,12 @@ class NvlistDebugSession extends LoggingDebugSession {
 
     protected setExpressionRequest(response: DebugProtocol.SetExpressionResponse, args: DebugProtocol.SetExpressionArguments, request?: DebugProtocol.Request): void {
         console.log(`SetExpression request: ${JSON.stringify(args)}`);
+
+        this.forwardRequest(request!);
+    }
+
+    protected sourceRequest(response: DebugProtocol.SourceResponse, args: DebugProtocol.SourceArguments, request?: DebugProtocol.Request): void {
+        console.log(`Source request: ${JSON.stringify(args)}`);
 
         this.forwardRequest(request!);
     }
