@@ -104,7 +104,7 @@ class NvlistDebugSession extends LoggingDebugSession {
         if (this.config.javaHome) {
             gradleArgs.push('-Dorg.gradle.java.home=' + this.config.javaHome);
         }
-        const childProcess = spawn(`gradlew.bat`, gradleArgs, {
+        const childProcess = spawn(`gradlew`, gradleArgs, {
             cwd: this.config.buildToolsFolder
         })
         this.childProcess = childProcess;
