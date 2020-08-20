@@ -3,7 +3,7 @@
     "displayName": "NVList",
     "publisher": "anonl",
     "description": "NVList scripting support",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "repository": "https://github.com/anonl/nvlist-vscode",
     "engines": {
         "vscode": "^1.47.0"
