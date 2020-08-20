@@ -5,6 +5,7 @@ import { DebugConfigProvider, DebugAdapterFactory } from './debugProvider';
 import { NvlistHoverProvider } from './hoverProvider';
 import { NvlistEvalExpressionProvider } from './evalExpressionProvider';
 import { NvlistStatusBarProvider } from './statusBarProvider';
+import { NvlistCompletionProvider } from './completionProvider';
 
 export function activate(context: vscode.ExtensionContext): void {  
 	const workspaceRoot = vscode.workspace.rootPath;
@@ -26,6 +27,8 @@ export function activate(context: vscode.ExtensionContext): void {
     const documentSelector: vscode.DocumentSelector = {language: 'nvlist'};
     context.subscriptions.push(vscode.languages.registerHoverProvider(documentSelector, new NvlistHoverProvider()));
     context.subscriptions.push(vscode.languages.registerEvaluatableExpressionProvider(documentSelector, new NvlistEvalExpressionProvider()));
+
+    context.subscriptions.push(vscode.languages.registerCompletionItemProvider(documentSelector, new NvlistCompletionProvider()));
 }
 
 export function deactivate() {
