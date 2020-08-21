@@ -25,10 +25,13 @@ export function activate(context: vscode.ExtensionContext): void {
         new DebugAdapterFactory()));
 
     const documentSelector: vscode.DocumentSelector = {language: 'nvlist'};
-    context.subscriptions.push(vscode.languages.registerHoverProvider(documentSelector, new NvlistHoverProvider()));
-    context.subscriptions.push(vscode.languages.registerEvaluatableExpressionProvider(documentSelector, new NvlistEvalExpressionProvider()));
+    context.subscriptions.push(vscode.languages.registerHoverProvider(documentSelector,
+        new NvlistHoverProvider()));
+    context.subscriptions.push(vscode.languages.registerEvaluatableExpressionProvider(documentSelector,
+        new NvlistEvalExpressionProvider()));
 
-    context.subscriptions.push(vscode.languages.registerCompletionItemProvider(documentSelector, new NvlistCompletionProvider()));
+    context.subscriptions.push(vscode.languages.registerCompletionItemProvider(documentSelector,
+        new NvlistCompletionProvider()));
 }
 
 export function deactivate() {

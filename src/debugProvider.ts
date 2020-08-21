@@ -20,6 +20,7 @@ export class DebugConfigProvider implements vscode.DebugConfigurationProvider {
                 config.program = '${file}';
                 config.projectFolder = folder?.uri.fsPath ?? '';
                 config.buildToolsFolder = path.join(config.projectFolder, 'build-tools');
+                config.port = 4711;
 			}
 		}
         return config;
@@ -143,10 +144,10 @@ class NvlistDebugSession extends LoggingDebugSession {
         conn.on('close', () => {
             if (childProcess.exitCode === null) {
                 // Retry connection attempt unless stopping/stopped
-                setTimeout(() => conn.connect(4711), retryTimeout);
+                setTimeout(() => conn.connect(this.config.port), retryTimeout);
             }
         })
-        conn.connect(4711);
+        conn.connect(this.config.port);
 	}
 
 	protected launchRequest(launchResponse: DebugProtocol.LaunchResponse, args: LaunchRequest, request?: DebugProtocol.Request): void {

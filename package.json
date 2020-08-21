@@ -76,7 +76,7 @@
                         "name": "NVList (main)",
                         "program": "${workspaceFolder}/res/script/main.lvn",
                         "projectFolder": "${workspaceFolder}",
-                        "buildToolsFolder": "${workspaceFolder}/build-tools"
+                        "buildToolsFolder": "${workspaceFolder}/build-tools",
                     }
                 ],
                 "configurationAttributes": {
@@ -101,6 +101,11 @@
                                 "type": "string",
                                 "description": "Path to a Java runtime (used to build/run NVList). A platform-specific runtime is packaged with NVList.",
                                 "default": "${workspaceFolder}/jre"
+                            },
+                            "port": {
+                                "type": "integer",
+                                "description": "Port at which the debug adapter server inside NVList is reachable",
+                                "default": 4711
                             }
 						}
 					}
