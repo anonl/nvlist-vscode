@@ -8,6 +8,8 @@ import { LanguageClient, LanguageClientOptions, ServerOptions, RequestType, Text
 
 let client: LanguageClient;
 let serverProcess: cp.ChildProcess;
+let serverSocket: net.Server;
+let socket: net.Socket;
 
 export async function startLanguageServer(context: vscode.ExtensionContext): Promise<void> {
     const config = vscode.workspace.getConfiguration('nvlist');
@@ -17,23 +19,35 @@ export async function startLanguageServer(context: vscode.ExtensionContext): Pro
         cwd: 'D:/git/nvlist'
     });
 
+    // Start listenening for incoming connections
+    serverSocket = net.createServer();
+    await new Promise((resolve, reject) => {
+        serverSocket.listen().once('listening', resolve).once('error', reject);
+    });
+    const port: number = (serverSocket.address() as net.AddressInfo).port;
+
+    // Start language server, telling it the port number we're listening on
     // TODO: Remove hardcoded settings
     const projectFolder = 'D:/git/nvlist';
-    const port = 12345;
     const javaHome = config.get('javaHome') || 'C:/Java8';
-    const gradleArgs = ['runLangServer', `-Dorg.gradle.java.home=${javaHome}`];
+    const gradleArgs = [
+        'runLangServer',
+        `-Dorg.gradle.java.home=${javaHome}`, // TODO: Store a default in build-tools/gradle.properties instead
+        `-Pargs=${port}`
+    ];
     const gradleWrapper = (os.platform() == 'win32' ? 'gradlew.bat' : 'gradlew');
-
     serverProcess = cp.spawn(gradleWrapper, gradleArgs, {
         cwd: projectFolder,
     });
+    serverProcess.stdout?.on('data', data => console.log(data.toString()));
+    serverProcess.stderr?.on('data', data => console.warn(data.toString()));
 
-    let serverOptions: ServerOptions = () => {
-        const socket: net.Socket = net.connect({ port });
-        return Promise.resolve({
-            reader: socket,
-            writer: socket,
+    let serverOptions: ServerOptions = async () => {
+        // Wait for incoming connection from language server
+        socket = await new Promise((resolve, reject) => {
+            serverSocket.on('connection', resolve).once('error', reject);
         });
+        return { reader: socket, writer: socket }
     };
 
     let clientOptions: LanguageClientOptions = {
@@ -65,6 +79,7 @@ export async function startLanguageServer(context: vscode.ExtensionContext): Pro
 }
 
 export function stopLanguageServer() {
+    serverSocket?.close()
     client?.stop();
     serverProcess?.kill();
 }
