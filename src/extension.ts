@@ -6,12 +6,13 @@ import { NvlistHoverProvider } from './hoverProvider';
 import { NvlistEvalExpressionProvider } from './evalExpressionProvider';
 import { NvlistStatusBarProvider } from './statusBarProvider';
 import { NvlistCompletionProvider } from './completionProvider';
+import { startLanguageServer, stopLanguageServer } from './languageServer';
 
-export function activate(context: vscode.ExtensionContext): void {  
+export async function activate(context: vscode.ExtensionContext) {
 	const workspaceRoot = vscode.workspace.rootPath;
 	if (!workspaceRoot) {
 		return;
-	}    
+	}
 
     console.log("NVList extension activated");
     context.subscriptions.push(new NvlistStatusBarProvider());
@@ -32,8 +33,14 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(documentSelector,
         new NvlistCompletionProvider()));
+
+    const config = vscode.workspace.getConfiguration('nvlist');
+    if (config.get('languageServerEnabled')) {
+        startLanguageServer(context);
+    }
 }
 
 export function deactivate() {
+    stopLanguageServer();
 }
 

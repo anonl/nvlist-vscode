@@ -76,26 +76,26 @@
                         "name": "NVList (main)",
                         "program": "${workspaceFolder}/res/script/main.lvn",
                         "projectFolder": "${workspaceFolder}",
-                        "buildToolsFolder": "${workspaceFolder}/build-tools",
+                        "buildToolsFolder": "${workspaceFolder}/build-tools"
                     }
                 ],
                 "configurationAttributes": {
                     "launch": {
-						"properties": {
-							"program": {
-								"type": "string",
-								"description": "NVList script (.lvn) file to run",
-								"default": "${workspaceFolder}/res/script/main.lvn"
-							},
-							"projectFolder": {
-								"type": "string",
-								"description": "NVList project root folder (contains the 'res' folder)",
-								"default": "${workspaceFolder}"
-							},
-							"buildToolsFolder": {
-								"type": "string",
-								"description": "NVList build-tools folder",
-								"default": "${workspaceFolder}/build-tools"
+                        "properties": {
+                            "program": {
+                                "type": "string",
+                                "description": "NVList script (.lvn) file to run",
+                                "default": "${workspaceFolder}/res/script/main.lvn"
+                            },
+                            "projectFolder": {
+                                "type": "string",
+                                "description": "NVList project root folder (contains the 'res' folder)",
+                                "default": "${workspaceFolder}"
+                            },
+                            "buildToolsFolder": {
+                                "type": "string",
+                                "description": "NVList build-tools folder",
+                                "default": "${workspaceFolder}/build-tools"
                             },
                             "javaHome": {
                                 "type": "string",
@@ -107,11 +107,25 @@
                                 "description": "Port at which the debug adapter server inside NVList is reachable",
                                 "default": 4711
                             }
-						}
-					}
+                        }
+                    }
                 }
             }
-        ]
+        ],
+        "configuration": {
+            "title": "NVList",
+            "properties": {
+                "nvlist.languageServerEnabled": {
+                    "description": "Enable the language server (runs in a separate process)",
+                    "type": "boolean",
+                    "default": false
+                },
+                "nvlist.javaHome": {
+                    "type": "string",
+                    "description": "Path to a Java runtime (used to build/run NVList). A platform-specific runtime is packaged with NVList."
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
@@ -119,7 +133,8 @@
         "watch": "tsc -b -w"
     },
     "dependencies": {
-        "vscode-debugadapter": "^1.41.1"
+        "vscode-debugadapter": "^1.41.1",
+        "vscode-languageclient": "^6.1.3"
     },
     "devDependencies": {
         "@types/node": "^12.12.0",
