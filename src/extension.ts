@@ -9,23 +9,23 @@ import { NvlistCompletionProvider } from './completionProvider';
 import { startLanguageServer, stopLanguageServer } from './languageServer';
 
 export async function activate(context: vscode.ExtensionContext) {
-	const workspaceRoot = vscode.workspace.rootPath;
-	if (!workspaceRoot) {
-		return;
-	}
+    const workspaceRoot = vscode.workspace.rootPath;
+    if (!workspaceRoot) {
+        return;
+    }
 
-    console.log("NVList extension activated");
+    console.log('NVList extension activated');
     context.subscriptions.push(new NvlistStatusBarProvider());
 
     context.subscriptions.push(vscode.tasks.registerTaskProvider(GradleTaskProvider.NVLIST_TASK_TYPE,
-            new GradleTaskProvider(workspaceRoot)));
+        new GradleTaskProvider(workspaceRoot)));
 
     context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('nvlist',
         new DebugConfigProvider()));
     context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('nvlist',
         new DebugAdapterFactory()));
 
-    const documentSelector: vscode.DocumentSelector = {language: 'nvlist'};
+    const documentSelector: vscode.DocumentSelector = { language: 'nvlist' };
     context.subscriptions.push(vscode.languages.registerHoverProvider(documentSelector,
         new NvlistHoverProvider()));
     context.subscriptions.push(vscode.languages.registerEvaluatableExpressionProvider(documentSelector,
@@ -43,4 +43,3 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     stopLanguageServer();
 }
-

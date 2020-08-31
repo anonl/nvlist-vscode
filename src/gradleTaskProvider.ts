@@ -38,9 +38,10 @@ export class GradleTaskProvider implements vscode.TaskProvider {
             return this.tasks;
         }
 
-        console.log("getTasks");
+        console.log('getTasks');
 
-        return this.tasks = [this.getTask('runDesktop')];
+        this.tasks = [this.getTask('runDesktop')];
+        return this.tasks;
     }
 
     private getTask(gradleTask: string, def?: NVListGradleTaskDefinition): vscode.Task {
@@ -51,7 +52,7 @@ export class GradleTaskProvider implements vscode.TaskProvider {
                 buildToolsFolder: this.workspaceRoot + '/build-tools'
             };
         }
-        return new vscode.Task(def, vscode.TaskScope.Workspace, `Run NVList`, GradleTaskProvider.NVLIST_TASK_TYPE,
+        return new vscode.Task(def, vscode.TaskScope.Workspace, 'Run NVList', GradleTaskProvider.NVLIST_TASK_TYPE,
             new vscode.ShellExecution('./gradlew',
                 ['-PvnRoot=' + this.workspaceRoot, def.gradleTask],
                 { cwd: def.buildToolsFolder }));

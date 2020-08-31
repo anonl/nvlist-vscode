@@ -130,7 +130,8 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -b",
-        "watch": "tsc -b -w"
+        "watch": "tsc -b -w",
+        "lint": "npx eslint ./src/**/*.ts"
     },
     "dependencies": {
         "vscode-debugadapter": "^1.41.1",
@@ -138,10 +139,11 @@
     },
     "devDependencies": {
         "@types/node": "^12.12.0",
-        "@typescript-eslint/eslint-plugin": "^3.0.2",
-        "@typescript-eslint/parser": "^3.0.2",
-        "eslint": "^7.1.0",
-        "typescript": "^3.9.4",
-        "@types/vscode": "^1.47.0"
+        "@types/vscode": "^1.47.0",
+        "@typescript-eslint/eslint-plugin": "^4.0.1",
+        "@typescript-eslint/parser": "^4.0.1",
+        "eslint": "^7.7.0",
+        "eslint-config-standard": "^14.1.1",
+        "typescript": "^3.9.4"
     }
 }

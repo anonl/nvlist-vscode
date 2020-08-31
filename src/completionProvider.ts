@@ -10,11 +10,12 @@ interface PathMatch {
 export class NvlistCompletionProvider implements vscode.CompletionItemProvider {
 
     async provideCompletionItems(doc: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken,
-            context: vscode.CompletionContext) {
+        context: vscode.CompletionContext)
+    {
 
         const results: vscode.CompletionItem[] = [];
         const curLine = doc.lineAt(pos.line).text;
-        if (pos.character == 0 || (pos.character == 1 && curLine.charAt(0) == '$')) {
+        if (pos.character === 0 || (pos.character === 1 && curLine.charAt(0) === '$')) {
             for (const s of this.getSpeakers(doc)) {
                 const item = new vscode.CompletionItem(s);
                 item.kind = vscode.CompletionItemKind.User;
@@ -42,12 +43,12 @@ export class NvlistCompletionProvider implements vscode.CompletionItemProvider {
 
         // TODO: Take context into account to switch between img/snd/script/video
         const baseDir = path.join(wsFolder.uri.fsPath, 'res', 'img');
-        
+
         // Note: NVList paths always use '/' as a separator
-        let dirs = [];
+        const dirs: string[] = [];
         let namePrefix;
         const pathPrefix = pathMatch.pathPrefix;
-        if (pathPrefix.length == 0 || pathPrefix.endsWith('/')) {
+        if (pathPrefix.length === 0 || pathPrefix.endsWith('/')) {
             dirs.push(path.join(baseDir, pathPrefix));
             namePrefix = '';
         } else {
@@ -92,7 +93,7 @@ export class NvlistCompletionProvider implements vscode.CompletionItemProvider {
     }
 
     private getPathMatchAt(doc: vscode.TextDocument, pos: vscode.Position): PathMatch | null {
-        const line = doc.lineAt(pos.line).text;        
+        const line = doc.lineAt(pos.line).text;
         const re = /(["'])(\\.|[^\\])*?\1/g;
 
         let match: RegExpExecArray | null;
@@ -117,8 +118,8 @@ export class NvlistCompletionProvider implements vscode.CompletionItemProvider {
     private getSpeakers(doc: vscode.TextDocument): Set<string> {
         const results: Set<string> = new Set();
         for (let lineIndex = 0; lineIndex < doc.lineCount; lineIndex++) {
-            const line = doc.lineAt(lineIndex).text;            
-            
+            const line = doc.lineAt(lineIndex).text;
+
             const re = /\$\S+/g;
             let match: RegExpExecArray | null;
             while ((match = re.exec(line)) != null) {

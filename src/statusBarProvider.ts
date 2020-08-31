@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 export class NvlistStatusBarProvider implements vscode.Disposable {
-    
+
     private readonly statusBarItem : vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 1_000);
     private readonly listeners: vscode.Disposable[] = [];
 
@@ -16,7 +16,7 @@ export class NvlistStatusBarProvider implements vscode.Disposable {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'nvlist') {
             let count = 0;
-            let block = undefined;
+            let block;
             for (let lineNum = 0; lineNum < editor.document.lineCount; lineNum++) {
                 const text = editor.document.lineAt(lineNum).text.trim();
                 if (block) {
@@ -49,5 +49,4 @@ export class NvlistStatusBarProvider implements vscode.Disposable {
         this.listeners.forEach(ls => ls.dispose());
         this.statusBarItem?.dispose();
     }
-
 }

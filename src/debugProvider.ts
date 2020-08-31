@@ -10,31 +10,33 @@ import * as os from 'os';
 import { spawn, ChildProcess } from 'child_process';
 
 export class DebugConfigProvider implements vscode.DebugConfigurationProvider {
-	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
-		if (!config.type && !config.request && !config.name) {
-			const editor = vscode.window.activeTextEditor;
-			if (editor && editor.document.languageId === 'nvlist') {
-				config.type = 'nvlist';
-				config.name = 'Launch';
+    resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+        if (!config.type && !config.request && !config.name) {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document.languageId === 'nvlist') {
+                config.type = 'nvlist';
+                config.name = 'Launch';
                 config.request = 'launch';
+                // Suppress eslint: We so actually want to produce a string with ${file} in it (replaced by vscode at launch time)
+                // eslint-disable-next-line no-template-curly-in-string
                 config.program = '${file}';
                 config.projectFolder = folder?.uri.fsPath ?? '';
                 config.buildToolsFolder = path.join(config.projectFolder, 'build-tools');
                 config.port = 4711;
-			}
-		}
+            }
+        }
         return config;
-	}
+    }
 }
 
 export class DebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
-	createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): ProviderResult<vscode.DebugAdapterDescriptor> {
-		return executable ?? new vscode.DebugAdapterInlineImplementation(new NvlistDebugSession(session.configuration));
-	}
+    createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): ProviderResult<vscode.DebugAdapterDescriptor> {
+        return executable ?? new vscode.DebugAdapterInlineImplementation(new NvlistDebugSession(session.configuration));
+    }
 }
 
 interface LaunchRequest extends DebugProtocol.LaunchRequestArguments {
-	program: string;
+    program: string;
 }
 
 const defaultTimeout: number = 10_000;
@@ -47,7 +49,7 @@ class PipedDebugSession extends DebugSession {
     }
 
     handleMessage(msg: DebugProtocol.ProtocolMessage): void {
-        if (msg.type == 'event') {
+        if (msg.type === 'event') {
             console.log(`Received event from remote debug server: ${JSON.stringify(msg)}`);
             this.client.sendEvent(<DebugProtocol.Event>msg);
         }
@@ -81,7 +83,7 @@ class NvlistDebugSession extends LoggingDebugSession {
 
     public shutdown() {
         super.shutdown();
-        
+
         console.log('Shutdown request received');
         this.childProcess?.kill();
         this.delegate?.stop();
@@ -94,8 +96,8 @@ class NvlistDebugSession extends LoggingDebugSession {
         this.sendEvent(event);
     }
 
-	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments, request?: DebugProtocol.Request): void {
-        console.log("Initialize request");
+    protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments, request?: DebugProtocol.Request): void {
+        console.log('Initialize request');
 
         // logger.setup(Logger.LogLevel.Verbose, false);
 
@@ -106,10 +108,10 @@ class NvlistDebugSession extends LoggingDebugSession {
         if (this.config.javaHome) {
             gradleArgs.push('-Dorg.gradle.java.home=' + this.config.javaHome);
         }
-        const gradleWrapper = (os.platform() == 'win32' ? 'gradlew.bat' : 'gradlew');
+        const gradleWrapper = (os.platform() === 'win32' ? 'gradlew.bat' : 'gradlew');
         const childProcess = spawn(gradleWrapper, gradleArgs, {
             cwd: this.config.buildToolsFolder
-        })
+        });
         this.childProcess = childProcess;
 
         // Forward output
@@ -120,11 +122,11 @@ class NvlistDebugSession extends LoggingDebugSession {
         childProcess.on('exit', () => this.sendEvent(new TerminatedEvent()));
 
         // Connect to the debug adapter server in the child process
-        console.log('Connecting to remote debug server...')
+        console.log('Connecting to remote debug server...');
         const conn = new net.Socket();
-        conn.setTimeout(defaultTimeout);        
+        conn.setTimeout(defaultTimeout);
         conn.on('connect', () => {
-            console.log("Connected to remote debug server");
+            console.log('Connected to remote debug server');
 
             const delegate = new PipedDebugSession(this);
             delegate.setRunAsServer(true);
@@ -134,7 +136,7 @@ class NvlistDebugSession extends LoggingDebugSession {
             // Initialize delegate
             delegate.sendRequest('initialize', request, defaultTimeout, initResponse => {
                 // Return response to launch request
-                console.log(`Remote debug server initialized`);
+                console.log('Remote debug server initialized');
 
                 initResponse.seq = response.seq;
                 this.sendResponse(initResponse);
@@ -146,15 +148,15 @@ class NvlistDebugSession extends LoggingDebugSession {
                 // Retry connection attempt unless stopping/stopped
                 setTimeout(() => conn.connect(this.config.port), retryTimeout);
             }
-        })
+        });
         conn.connect(this.config.port);
-	}
+    }
 
-	protected launchRequest(launchResponse: DebugProtocol.LaunchResponse, args: LaunchRequest, request?: DebugProtocol.Request): void {
+    protected launchRequest(launchResponse: DebugProtocol.LaunchResponse, args: LaunchRequest, request?: DebugProtocol.Request): void {
         console.log(`Launch request: ${JSON.stringify(args)}`);
 
         this.forwardRequest(request!);
-	}
+    }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
         console.log(`Disconnect request: ${JSON.stringify(args)}`);
@@ -167,7 +169,7 @@ class NvlistDebugSession extends LoggingDebugSession {
     }
 
     protected threadsRequest(response: DebugProtocol.ThreadsResponse, request?: DebugProtocol.Request): void {
-        console.log(`Threads request`);
+        console.log('Threads request');
 
         this.forwardRequest(request!);
     }
