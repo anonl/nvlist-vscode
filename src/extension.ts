@@ -14,7 +14,9 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    console.log('NVList extension activated');
+    const output = vscode.window.createOutputChannel('NVList');
+    context.subscriptions.push(output);
+
     context.subscriptions.push(new NvlistStatusBarProvider());
 
     context.subscriptions.push(vscode.tasks.registerTaskProvider(GradleTaskProvider.NVLIST_TASK_TYPE,
@@ -37,10 +39,9 @@ export async function activate(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration('nvlist');
     const buildToolsFolder = config.get('buildToolsFolder');
     if (buildToolsFolder) {
-        console.info(`Starting language server (buildToolsFolder=${buildToolsFolder})`);
-        startLanguageServer(context, buildToolsFolder as string);
+        startLanguageServer(context, output, buildToolsFolder as string);
     } else {
-        console.info('nvlist.buildToolsFolder not set, no language server will be started');
+        output.appendLine('nvlist.buildToolsFolder not set, no language server will be started');
     }
 }
 

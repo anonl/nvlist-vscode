@@ -10,9 +10,25 @@ let serverProcess: cp.ChildProcess;
 let serverSocket: net.Server;
 let socket: net.Socket;
 
-export async function startLanguageServer(context: vscode.ExtensionContext, buildToolsFolder: string): Promise<void> {
+function withProgress<T>(promise: Promise<T>, title?: string): PromiseLike<T> {
+    const opts: vscode.ProgressOptions = {
+        location: vscode.ProgressLocation.Notification,
+        title,
+    };
+    return vscode.window.withProgress(opts, (progress: vscode.Progress<T>) => {
+        return promise;
+    });
+}
+
+export async function startLanguageServer(context: vscode.ExtensionContext, output: vscode.OutputChannel,
+    buildToolsFolder: string): Promise<void>
+{
+    output.appendLine(`Starting language server (buildToolsFolder=${buildToolsFolder})`);
+    output.show();
+
     // Start listenening for incoming connections
     serverSocket = net.createServer();
+
     await new Promise((resolve, reject) => {
         serverSocket.listen().once('listening', resolve).once('error', reject);
     });
@@ -27,21 +43,24 @@ export async function startLanguageServer(context: vscode.ExtensionContext, buil
     serverProcess = cp.spawn(gradleWrapper, gradleArgs, {
         cwd: buildToolsFolder,
     });
-    serverProcess.stdout?.on('data', data => console.log(data.toString()));
-    serverProcess.stderr?.on('data', data => console.warn(data.toString()));
+    serverProcess.stdout?.on('data', data => output.append(data.toString()));
+    serverProcess.stderr?.on('data', data => output.append(data.toString()));
 
     const serverOptions: ServerOptions = async () => {
         // Wait for incoming connection from language server
-        socket = await new Promise((resolve, reject) => {
+        socket = await withProgress(new Promise<net.Socket>((resolve, reject) => {
             serverSocket.on('connection', resolve).once('error', reject);
-        });
+        }), 'Waiting for NVList language server to start...');
+        output.appendLine('🔗 Connected to NVList language server');
         return { reader: socket, writer: socket };
     };
 
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
-            { language: 'nvlist' },
-            { language: 'lua' },
+            { scheme: 'file', language: 'nvlist' },
+            { scheme: 'nvlist-builtin', language: 'nvlist' },
+            { scheme: 'file', language: 'lua' },
+            { scheme: 'nvlist-builtin', language: 'lua' },
         ],
         synchronize: {
             fileEvents: [
