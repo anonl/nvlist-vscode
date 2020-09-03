@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as util from 'util';
 import * as cp from 'child_process';
 import * as os from 'os';
 import * as net from 'net';
@@ -11,16 +10,7 @@ let serverProcess: cp.ChildProcess;
 let serverSocket: net.Server;
 let socket: net.Socket;
 
-export async function startLanguageServer(context: vscode.ExtensionContext): Promise<void> {
-    const config = vscode.workspace.getConfiguration('nvlist');
-
-    // TODO: Remove this hack to quickly recompile the langserver before every execution
-    // TODO: Remove hardcoded settings
-    const projectFolder = 'D:/git/nvlist';
-    await util.promisify(cp.exec)('gradlew.bat :nvlist-langserver:shadowJar', {
-        cwd: projectFolder
-    });
-
+export async function startLanguageServer(context: vscode.ExtensionContext, buildToolsFolder: string): Promise<void> {
     // Start listenening for incoming connections
     serverSocket = net.createServer();
     await new Promise((resolve, reject) => {
@@ -29,16 +19,13 @@ export async function startLanguageServer(context: vscode.ExtensionContext): Pro
     const port: number = (serverSocket.address() as net.AddressInfo).port;
 
     // Start language server, telling it the port number we're listening on
-    // TODO: Remove hardcoded settings
-    const javaHome = config.get('javaHome') || 'C:/Java8';
     const gradleArgs = [
         'runLanguageServer',
-        `-Dorg.gradle.java.home=${javaHome}`, // TODO: Store a default in build-tools/gradle.properties instead
         `-Pargs=${port}`
     ];
     const gradleWrapper = (os.platform() === 'win32' ? 'gradlew.bat' : 'gradlew');
     serverProcess = cp.spawn(gradleWrapper, gradleArgs, {
-        cwd: projectFolder,
+        cwd: buildToolsFolder,
     });
     serverProcess.stdout?.on('data', data => console.log(data.toString()));
     serverProcess.stderr?.on('data', data => console.warn(data.toString()));
@@ -53,11 +40,14 @@ export async function startLanguageServer(context: vscode.ExtensionContext): Pro
 
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
-            { scheme: 'file', language: 'nvlist' },
-            { scheme: 'nvlist-builtin', language: 'nvlist' },
+            { language: 'nvlist' },
+            { language: 'lua' },
         ],
         synchronize: {
-            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.lvn'),
+            fileEvents: [
+                vscode.workspace.createFileSystemWatcher('**/*.lua'),
+                vscode.workspace.createFileSystemWatcher('**/*.lvn'),
+            ],
         },
     };
 

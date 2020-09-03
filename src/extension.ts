@@ -35,8 +35,12 @@ export async function activate(context: vscode.ExtensionContext) {
         new NvlistCompletionProvider()));
 
     const config = vscode.workspace.getConfiguration('nvlist');
-    if (config.get('languageServerEnabled')) {
-        startLanguageServer(context);
+    const buildToolsFolder = config.get('buildToolsFolder');
+    if (buildToolsFolder) {
+        console.info(`Starting language server (buildToolsFolder=${buildToolsFolder})`);
+        startLanguageServer(context, buildToolsFolder as string);
+    } else {
+        console.info('nvlist.buildToolsFolder not set, no language server will be started');
     }
 }
 
