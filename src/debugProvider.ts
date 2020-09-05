@@ -9,6 +9,8 @@ import * as net from 'net';
 import * as os from 'os';
 import { spawn, ChildProcess } from 'child_process';
 
+const DEFAULT_PORT = 4711;
+
 export class DebugConfigProvider implements vscode.DebugConfigurationProvider {
     resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
         if (!config.type && !config.request && !config.name) {
@@ -22,7 +24,7 @@ export class DebugConfigProvider implements vscode.DebugConfigurationProvider {
                 config.program = '${file}';
                 config.projectFolder = folder?.uri.fsPath ?? '';
                 config.buildToolsFolder = path.join(config.projectFolder, 'build-tools');
-                config.port = 4711;
+                config.port = DEFAULT_PORT;
             }
         }
         return config;
@@ -123,9 +125,7 @@ class NvlistDebugSession extends LoggingDebugSession {
 
         // Connect to the debug adapter server in the child process
         console.log('Connecting to remote debug server...');
-        const conn = new net.Socket();
-        conn.setTimeout(defaultTimeout);
-        conn.on('connect', () => {
+        this.connectToDebugServer(conn => {
             console.log('Connected to remote debug server');
 
             const delegate = new PipedDebugSession(this);
@@ -143,13 +143,26 @@ class NvlistDebugSession extends LoggingDebugSession {
                 this.sendEvent(new InitializedEvent());
             });
         });
-        conn.on('close', () => {
-            if (childProcess.exitCode === null) {
+    }
+
+    private connectToDebugServer(connectionListener: (socket: net.Socket) => void): void {
+        const conn = new net.Socket();
+        conn.setTimeout(defaultTimeout);
+        const reconnect = () => {
+            if (this.childProcess?.exitCode === null) {
                 // Retry connection attempt unless stopping/stopped
-                setTimeout(() => conn.connect(this.config.port), retryTimeout);
+                setTimeout(() => this.connectToDebugServer(connectionListener), retryTimeout);
             }
+        };
+        conn.on('timeout', () => {
+            console.trace('Timeout on connection to debug server');
+            reconnect();
         });
-        conn.connect(this.config.port);
+        conn.on('error', err => {
+            console.log(`Error on connection to debug server: ${err}`);
+            reconnect();
+        });
+        conn.connect(this.config.port ?? DEFAULT_PORT, () => connectionListener(conn));
     }
 
     protected launchRequest(launchResponse: DebugProtocol.LaunchResponse, args: LaunchRequest, request?: DebugProtocol.Request): void {
