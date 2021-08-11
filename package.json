@@ -3,7 +3,7 @@
     "displayName": "NVList",
     "publisher": "anonl",
     "description": "NVList scripting support",
-    "version": "0.0.5",
+    "version": "0.1.0",
     "repository": "https://github.com/anonl/nvlist-vscode",
     "engines": {
         "vscode": "^1.47.0"
@@ -129,6 +129,7 @@
         "lint": "npx eslint ./src/**/*.ts"
     },
     "dependencies": {
+        "vsce": "^1.96.1",
         "vscode-debugadapter": "^1.41.1",
         "vscode-languageclient": "^6.1.3"
     },

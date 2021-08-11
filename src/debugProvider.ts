@@ -37,6 +37,9 @@ export class DebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory
     }
 }
 
+/**
+ * NVList-specific launch request options
+ */
 interface LaunchRequest extends DebugProtocol.LaunchRequestArguments {
     program: string;
 }
@@ -71,6 +74,7 @@ class NvlistDebugSession extends LoggingDebugSession {
         logger.init(e => this.sendEvent(e), undefined, true);
     }
 
+    /** Forwards a request to the delegate debug session */
     private forwardRequest(request: DebugProtocol.Request) {
         if (!this.delegate) {
             console.warn(`Delegate is unavailable for request: ${JSON.stringify(request)}`);
@@ -101,8 +105,8 @@ class NvlistDebugSession extends LoggingDebugSession {
     protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments, request?: DebugProtocol.Request): void {
         console.log('Initialize request');
 
-        // logger.setup(Logger.LogLevel.Verbose, false);
-
+        // Start NVList process via Gradle
+        // The NVList process hosts its own debug adapter server
         const gradleArgs = [
             '-PvnRoot=' + this.config.projectFolder,
             'runDesktop',
@@ -116,7 +120,7 @@ class NvlistDebugSession extends LoggingDebugSession {
         });
         this.childProcess = childProcess;
 
-        // Forward output
+        // Forward NVList output
         childProcess.stdout.on('data', data => this.sendOutput('stdout', data.toString()));
         childProcess.stderr.on('data', data => this.sendOutput('stderr', data.toString()));
 
@@ -154,11 +158,11 @@ class NvlistDebugSession extends LoggingDebugSession {
                 setTimeout(() => this.connectToDebugServer(connectionListener), retryTimeout);
             }
         };
-        conn.on('timeout', () => {
+        conn.once('timeout', () => {
             console.trace('Timeout on connection to debug server');
             reconnect();
         });
-        conn.on('error', err => {
+        conn.once('error', err => {
             console.log(`Error on connection to debug server: ${err}`);
             reconnect();
         });
